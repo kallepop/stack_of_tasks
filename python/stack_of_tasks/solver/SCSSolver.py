@@ -27,12 +27,6 @@ class SCSSolver(HqpSolver):
         if solution["info"]["status_val"] != 1:
             print(solution["info"])
             return None
-        dq = solution["x"][: self.N]
-
-        for task in self._task_hierarchy.levels[level_index]:
-            b = task.A.dot(dq)
-            self._add_nullspace(task.A, b)
-
         return solution["x"][: self.N]
 
     def _solve(self, warmstart, **options) -> Any:

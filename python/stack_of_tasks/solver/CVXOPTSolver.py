@@ -23,13 +23,7 @@ class CVXOPTSolver(HqpSolver):
         self.slack_joint_matrix = np.identity(self.m_slacks + self.N)
 
     def _interpret_solution(self, level_index, solution: object) -> Any:
-        dq = np.asarray(solution["x"]).reshape(-1)[: self.N]
-
-        for task in self._task_hierarchy.levels[level_index]:
-            b = task.A.dot(dq)
-            self._add_nullspace(task.A, b)
-
-        return dq
+        return np.asarray(solution["x"]).reshape(-1)[: self.N]
 
     def _solve(self, warmstart, **options) -> Any:
         P = self.objective_matrix[: self.N + self.slacks, : self.N + self.slacks]

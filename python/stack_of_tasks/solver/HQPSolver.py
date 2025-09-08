@@ -260,6 +260,8 @@ class HqpSolver(Solver):
             solution = self._interpret_solution(level_index, solution)
             if solution is not None:
                 dq_warmstart = solution
+                for task in self._task_hierarchy.levels[level_index]:
+                    self._add_nullspace(task.A, task.A.dot(solution))
             else:
                 print("Failed to solve level", level_index + 1)
 

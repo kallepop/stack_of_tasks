@@ -27,13 +27,7 @@ class OSQPSolver(HqpSolver):
         if solution.info.status_val != 1:
             return None
 
-        dq = solution.x[: self.N]
-
-        for task in self._task_hierarchy[level_index]:
-            b = task.A.dot(dq)
-            self._add_nullspace(task.A, b)
-
-        return dq
+        return solution.x[: self.N]
 
     def _solve(self, warmstart, **options) -> Any:
         P = snp.csc_matrix(self.objective_matrix[: self.N + self.slacks, : self.N + self.slacks])
