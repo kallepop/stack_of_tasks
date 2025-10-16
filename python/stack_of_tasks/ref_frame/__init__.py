@@ -63,7 +63,7 @@ class Offset(RefFrame):
     offset: Transform = ta.Array(
         dtype="float",
         value=np.identity(4),
-        comparison_mode=ta.ComparisonMode.none,
+        comparison_mode=ta.ComparisonMode.identity,
     )
     frame: RefFrame = ta.Instance(RefFrame)
     T: Transform = ta.Property(ta.Array, visible=False)
