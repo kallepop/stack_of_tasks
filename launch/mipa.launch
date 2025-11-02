@@ -1,0 +1,49 @@
+<launch>
+	<arg name="rviz" default="true" />
+
+	<!-- Load URDF -->
+	<param name="robot_description"
+		command="xacro '$(find mipa_description)/urdf/mipa.urdf.xacro' arm_prefix:=dual_new_arms_"/>
+
+	<!-- initial joint positions -->
+	<rosparam param="initial_joints">{
+Torso_lin_z: 0.1,
+right_shoulder_y: 0.8,
+right_shoulder_x: -0.3,
+right_shoulder_z: -0.7,
+right_elbow_y: 0.9,
+right_wrist_y: -0.5,
+left_shoulder_y: -0.8,
+left_shoulder_x: 0.3,
+left_shoulder_z: 0.7,
+left_elbow_y: -0.9,
+left_wrist_y: 0.5,
+right_thumb_finger_proximal_jaw: 1.0,
+right_thumb_finger_proximal_pitch: 0.3,
+right_index_finger_proximal: 0.4,
+right_middle_finger_proximal: 0.4,
+right_ring_finger_proximal: 0.4,
+right_pinky_finger_proximal: 0.4,
+left_thumb_finger_proximal_jaw: 1.0,
+left_thumb_finger_proximal_pitch: 0.3,
+left_index_finger_proximal: 0.4,
+left_middle_finger_proximal: 0.4,
+left_ring_finger_proximal: 0.4,
+left_pinky_finger_proximal: 0.4,
+}</rosparam>
+	<rosparam param="joint_mins">{left_wrist_y: 0.2,}</rosparam>
+	<rosparam param="joint_maxs">{right_wrist_y: -0.2,}</rosparam>
+
+	<!-- Publish static tf for world -> base -->
+	<node name="virtual_joint" pkg="tf2_ros" type="static_transform_publisher" args="0 0 0 0 0 0 world base_footprint"/>
+
+	<!-- Publish joint states -->
+	<node name="joint_state_publisher" pkg="joint_state_publisher_gui" type="joint_state_publisher_gui">
+		<rosparam param="source_list">[target_joint_states]</rosparam>
+	</node>
+	<!-- Given the published joint states, publish tf for all robot links -->
+	<node name="rsp" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true" />
+
+	<!-- Run Rviz -->
+	<node if="$(arg rviz)" name="$(anon rviz)" pkg="rviz" type="rviz" output="screen" args="-d $(dirname)/mipa.rviz" required="true" />
+</launch>

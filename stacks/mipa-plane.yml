@@ -1,0 +1,91 @@
+settings:
+  actuator: !SOT_object:JointStatePublisherActuator {}
+  geometry: !!binary |
+    AdnQywADAAAAAAXnAAACfQAAB5sAAASTAAAF5wAAAqIAAAebAAAEkwAAAAAAAAAACgAAAAXnAAAC
+    ogAAB5sAAAST
+  rate: 50.0
+  solver: !SOT_object:OSQPSolver {}
+frames:
+- &id003 !SOT_object:RobotRefFrame
+  link_name: left_tcp_pour
+  name: left_hand
+- &id004 !SOT_object:MarkerFrame
+  marker: &id002 !SOT_object:PlaneMarker
+    frame_id: base_footprint
+    name: plane
+    scale: 0.25
+    transform: !SOT_transform {rpy: [0.0, 0.0, 0.0], xyz: [0.4, 0.0, 0.5]}
+  name: marker
+- &id008 !SOT_object:Offset
+  frame: &id001 !SOT_object:RobotRefFrame
+    link_name: right_tcp_pour
+    name: right_hand
+  name: right_goal
+  offset: !SOT_transform {rpy: [0.0, 0.0, 0.0], xyz: [0.0, -0.15, 0.0]}
+- *id001
+marker:
+- *id002
+stack_of_tasks:
+  0:
+  - !SOT_object:PlaneTask
+    name: ''
+    rho: !SOT_arr [100.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+      1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    robot: *id003
+    softness_type: &id005 !SOT_enum TaskSoftnessType.linear
+    target: *id004
+    weight: 1.0
+  1:
+  - !SOT_object:DistanceTask
+    distance: 0.2
+    name: ''
+    refA: *id004
+    refB: *id003
+    relType: &id006 !SOT_enum RelativeType.A_FIXED
+    rho: !SOT_arr [100.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+      1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    softness_type: *id005
+    weight: 1.0
+  2:
+  - !SOT_object:RotationTask
+    axis: !SOT_arr [0.0, 0.0, 1.0]
+    center: *id004
+    name: ''
+    omega: 0.5
+    rho: !SOT_arr [100.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+      1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    robot: *id003
+    softness_type: &id007 !SOT_enum TaskSoftnessType.quadratic
+    weight: 1.0
+  3:
+  - !SOT_object:ConeTask
+    angle: 0.5
+    name: ''
+    refA: *id004
+    refA_axis: !SOT_arr [0, 0, 1]
+    refB: *id003
+    refB_axis: !SOT_arr [0, 1, 0]
+    relType: *id006
+    rho: !SOT_arr [100.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+      1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    softness_type: *id007
+    weight: 1.0
+  4:
+  - !SOT_object:PositionTask
+    name: ''
+    refA: *id003
+    refB: *id008
+    relType: !SOT_enum RelativeType.RELATIVE
+    rho: !SOT_arr [100.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+      1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    softness_type: *id005
+    weight: 1.0
+  5:
+  - !SOT_object:JointTask
+    name: ''
+    rho: !SOT_arr [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+      1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    softness_type: *id007
+    target: !SOT_arr [0.1, 0.0, 0.0, 0.0, 0.9, 0.0, -0.5, 0.0, 0.0, 0.0, 0.0, -0.9,
+      0.0, 0.5, 0.0, 0.75, 0.3, 0.4, 0.4, 0.4, 0.4, 0.75, 0.3, 0.4, 0.4, 0.4, 0.4]
+    weight: 1.0
