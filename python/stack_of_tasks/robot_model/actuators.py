@@ -31,8 +31,6 @@ class DummyActuator(Actuator):
     @syringe.inject
     def __init__(self, robot_state: RobotState, ns_prefix="") -> None:
         self._robot_state = robot_state
-        robot_state.incoming_joint_values = robot_state.initial_joints
-        robot_state.update()
 
     def set_random_joints(self, randomness=0):
         model = self._robot_state.robot_model

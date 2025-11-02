@@ -30,14 +30,13 @@ class Controller(BaseSoTHasTraits):
     def __init__(self, config: Configuration) -> None:
         super().__init__()
 
-        # robotmodel
-        self.robot_model = RobotModel(config.settings.pop("robot_model_param", "robot_description"))
-        # robotstate
-        self.robot_state = RobotState(self.robot_model)
-
-        # set global data
-        syringe[RobotModel] = self.robot_model
-        syringe[RobotState] = self.robot_state
+        # reuse existing RobotModel and RobotState
+        self.robot_model: RobotModel = syringe[RobotModel]
+        self.robot_state: RobotState = syringe[RobotState]
+        if self.robot_model is None or self.robot_state is None:
+            robot_model_param = config.settings.pop("robot_model_param", "robot_description")
+            syringe[RobotModel] = self.robot_model = RobotModel(robot_model_param)
+            syringe[RobotState] = self.robot_state = RobotState(self.robot_model)
 
         try:
             actuator = config.settings.pop("actuator")
