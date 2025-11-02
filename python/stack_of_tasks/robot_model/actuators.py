@@ -16,20 +16,6 @@ from .robot_state import RobotState
 ActuatorRegister = ClassRegister("ActuatorRegister")
 
 
-def initial_joint_values(state: RobotState, ns="", param="initial_joints"):
-    values = rospy.get_param(ns + "/" + param, {})
-
-    if isinstance(values, dict):
-        return [
-            values.get(joint.name, 0.5 * (joint.min + joint.max))
-            for joint in state.robot_model.active_joints
-        ]
-    elif isinstance(values, list):
-        return values
-    else:
-        raise TypeError(f"Invalid type for {param}: {type(values)}")
-
-
 @ActuatorRegister.base
 class Actuator(ABCSoTHasTraits):
     """Base class for actuators"""
@@ -45,14 +31,13 @@ class DummyActuator(Actuator):
     @syringe.inject
     def __init__(self, robot_state: RobotState, ns_prefix="") -> None:
         self._robot_state = robot_state
-        self.initial_values = initial_joint_values(robot_state, ns_prefix)
-        robot_state.incoming_joint_values = self.initial_values
+        robot_state.incoming_joint_values = robot_state.initial_joints
         robot_state.update()
 
     def set_random_joints(self, randomness=0):
         model = self._robot_state.robot_model
         width = 0.5 * (model.maxs - model.mins) * randomness
-        self._robot_state.incoming_joint_values = self.initial_values + width * (
+        self._robot_state.incoming_joint_values = self._robot_state.initial_joints + width * (
             numpy.random.random_sample(width.shape) - 0.5
         )
         self._robot_state.update()

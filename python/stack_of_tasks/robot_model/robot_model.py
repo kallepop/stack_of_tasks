@@ -171,11 +171,10 @@ class RobotModel:
                 joint.idx = joint.base.idx
 
         # infos derived from model
-
         self.N = len(self.active_joints)
-        self.mins = numpy.array([j.min for j in self.active_joints])
-        self.maxs = numpy.array([j.max for j in self.active_joints])
-        self.vmaxs = numpy.array([j.vmax for j in self.active_joints])
+        self.mins = numpy.array(joint_values(self, "joint_mins", [j.min for j in self.active_joints]))
+        self.maxs = numpy.array(joint_values(self, "joint_maxs", [j.max for j in self.active_joints]))
+        self.vmaxs = numpy.array(joint_values(self, "joint_vmaxs", [j.vmax for j in self.active_joints]))
 
     def _mimic_base(self, name: str, multiplier: float, offset: float):
         "recursively resolve MimicJoint to its base"
@@ -242,3 +241,14 @@ class RobotModel:
 
     def getEEFs(self) -> List[str]:
         return {link for link in self.links if self.isEEF(link)}
+
+
+def joint_values(model: RobotModel, param, defaults, ns=""):
+    values = rospy.get_param(ns + "/" + param, {})
+
+    if isinstance(values, dict):
+        return [values.get(joint.name, default) for joint, default in zip(model.active_joints, defaults)]
+    elif isinstance(values, list):
+        return values
+    else:
+        raise TypeError(f"Invalid type for {param}: {type(values)}")

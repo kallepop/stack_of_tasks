@@ -8,7 +8,7 @@ import rospy
 from stack_of_tasks.utils.traits import ABCSoTHasTraits
 from stack_of_tasks.utils.transform_math import adjoint
 
-from .robot_model import ActiveJoint, Joint, RobotModel
+from .robot_model import ActiveJoint, Joint, RobotModel, joint_values
 
 
 class RobotState(ABCSoTHasTraits):
@@ -22,8 +22,8 @@ class RobotState(ABCSoTHasTraits):
         self._fk_cache: Dict[Joint, Tuple[numpy.ndarray, numpy.ndarray]] = {}
 
         # buffer for joint values received from sensors
-        self.incoming_joint_values = 0.5 * (self.robot_model.mins + self.robot_model.maxs)
-        self.joint_values = self.incoming_joint_values
+        self.initial_joints = joint_values(model, "initial_joints", 0.5 * (model.mins + model.maxs))
+        self.joint_values = self.incoming_joint_values = self.initial_joints
 
     @ta.observe("joint_values")
     def _jv_change(self, evt):
