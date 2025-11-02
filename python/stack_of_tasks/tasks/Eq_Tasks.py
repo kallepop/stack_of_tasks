@@ -67,7 +67,9 @@ class RotationTask(EqTask):
         weight: float = 1,
         **traits,
     ) -> None:
-        super().__init__(softness_type, weight, robot=robot, center=center, **traits)
+        super().__init__(
+            softness_type=softness_type, weight=weight, robot=robot, center=center, **traits
+        )
         self.observe(self._trigger_recompute, "robot:T, _J, axis, omega")
 
     def compute(self) -> Tuple[A, Bound]:

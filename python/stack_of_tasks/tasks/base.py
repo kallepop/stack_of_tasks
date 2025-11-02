@@ -167,7 +167,9 @@ class TargetTask(Task, ABC):
         weight: float = 1,
         **traits,
     ) -> None:
-        super().__init__(softness_type, weight, target=target, robot=robot, **traits)
+        super().__init__(
+            softness_type=softness_type, weight=weight, target=target, robot=robot, **traits
+        )
         self.observe(self._trigger_recompute, "target:T, robot:T, _J")
 
 
