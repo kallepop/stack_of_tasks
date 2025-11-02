@@ -138,13 +138,14 @@ class TraitWidgetBinding(Binder):
                 widget.setProperty(self.prop_name, val)
 
     def _teardown(self):
-
         if self.finalizer.alive:
             if (t := self._hasTrait()) is not None:
                 t.observe(self, self._trait_name, remove=True, dispatch="ui")
 
     def __call__(self, val) -> Any:
-        self._widget().setProperty(self.prop_name, val.new)
+        w = self._widget()
+        if w is not None:
+            w.setProperty(self.prop_name, val.new)
 
 
 class TraitObjectModelBinder(Binder):
