@@ -6,6 +6,7 @@ from threading import Event, Thread
 from typing import Any, List, Type
 
 import traits.api as ta
+from PyQt5.QtCore import Qt
 
 import rospy
 
@@ -132,6 +133,8 @@ class Logic_Project(BaseSoTHasTraits):
         TraitObjectModelBinder(self, "marker_objects", self.marker_model, True)
 
         self.ui = ProjectUI()
+        # Keep window on top
+        # self.ui.setWindowFlags(self.ui.windowFlags() | Qt.WindowStaysOnTopHint)
 
         self.ui.settings_tab.settings.set_trait_object(self.controller)
 
