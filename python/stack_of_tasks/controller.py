@@ -8,7 +8,7 @@ import rospy
 from stack_of_tasks import syringe
 from stack_of_tasks.config import Configuration
 from stack_of_tasks.robot_model.actuators import Actuator, DummyActuator
-from stack_of_tasks.robot_model.robot_model import RobotModel
+from stack_of_tasks.robot_model.robot_model import RobotModel, joint_values
 from stack_of_tasks.robot_model.robot_state import RobotState
 from stack_of_tasks.solver.AbstractSolver import Solver
 from stack_of_tasks.tasks import TaskHierarchy
@@ -37,6 +37,11 @@ class Controller(BaseSoTHasTraits):
             robot_model_param = config.settings.pop("robot_model_param", "robot_description")
             syringe[RobotModel] = self.robot_model = RobotModel(robot_model_param)
             syringe[RobotState] = self.robot_state = RobotState(self.robot_model)
+
+        self.robot_state.joint_values = self.robot_state.incoming_joint_values = [
+            config.joint_values.get(joint.name, current)
+            for joint, current in zip(self.robot_model.active_joints, self.robot_state.joint_values)
+        ]
 
         try:
             actuator = config.settings.pop("actuator")

@@ -5,12 +5,14 @@ class Configuration:
     def __init__(self, *args) -> None:
         if len(args) == 2:  # instantiation from actuator and solver classes
             self.settings = {k: SoTInstancingData(v, {}) for k, v in zip(["solver", "actuator"], args)}
+            self.joint_values = {}
             self._sot = TaskHierarchy()
             self._objects = {"frames": [], "marker": []}
         else:  # instantiation from yaml dictionary
             data = args[0]
 
             self.settings = data.pop("settings")
+            self.joint_values = data.pop("joint_values", {})
             self._sot = None
             self._task_data = data.pop("stack_of_tasks")
             # remaining data are objects

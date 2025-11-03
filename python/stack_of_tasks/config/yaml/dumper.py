@@ -58,6 +58,10 @@ class SotDumper(yaml.CDumper):
         data.value.extend(obs_nodes.value)
         data.value.extend(sot_node.value)
 
+        rm, rs = controller.robot_model, controller.robot_state
+        joint_values = {j.name: float(v) for j, v in zip(rm.active_joints, rs.joint_values)}
+        data.value.extend(self.represent_data(dict(joint_values=joint_values)).value)
+
         return data
 
     def _represent_enum(self: SotDumper, data: Enum):
