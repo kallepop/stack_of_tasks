@@ -68,6 +68,7 @@ class Logic_Main:
     # Project management
 
     def _safe_file(self, url: Path):
+        self.current_project.controller.geometry = self.current_project.ui.saveGeometry().data()
         yaml_str = dump(self.current_project.controller)
         url.write_text(yaml_str)
 
@@ -86,11 +87,12 @@ class Logic_Main:
             self._safe_file(self.current_project.url)
 
     def _create_project(self, config):
-        old_geometry = None
+        geometry = config.settings.pop("geometry", None)
         if self.current_project is not None:
-            old_geometry = self.current_project.ui.saveGeometry()
-
+            if geometry is None:
+                geometry = self.current_project.ui.saveGeometry()
             self.current_project.teardown()
+
         self.current_project = Logic_Project(config)
 
         self.current_project.ui.new_signal.connect(self.new_project)
@@ -98,8 +100,8 @@ class Logic_Main:
         self.current_project.ui.save_signal.connect(self._safe)
         self.current_project.ui.save_as_signal.connect(self._safe_as)
 
-        if old_geometry is not None:
-            self.current_project.ui.restoreGeometry(old_geometry)
+        if geometry is not None:
+            self.current_project.ui.restoreGeometry(geometry)
         self.current_project.ui.show()
 
     def _load_project(self, config_location: Path):

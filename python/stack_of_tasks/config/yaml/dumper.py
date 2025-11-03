@@ -30,6 +30,7 @@ class SotDumper(yaml.CDumper):
             state.pop("__traits_version__")
 
         if isinstance(data, Controller):
+            state["geometry"] = data.geometry
             return self.controller_repr(data, state)
         else:
             return self.represent_mapping(SOT_TAG_PREFIX + "object:" + cls.__name__, state)
