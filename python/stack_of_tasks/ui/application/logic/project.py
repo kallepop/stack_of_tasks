@@ -218,20 +218,15 @@ class Logic_Project(BaseSoTHasTraits):
             self.ui.run_Button.setText("Start")
 
     ## logic deletion procedure
-
     def teardown(self):
-
-        self.clear_data()
-
-        self.ui.close()
-        self.ui.deleteLater()
-
         if WorkerThread.is_running():
             WorkerThread.toggle_running(None)
 
-    def clear_data(self):
+        self.clear_data()
+        self.ui.close()
+        self.ui.deleteLater()
 
+    def clear_data(self):
         self.ref_objects.clear()
         self.marker_objects.clear()
-
         ModelMapping.clear_mapping()
