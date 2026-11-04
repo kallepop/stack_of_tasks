@@ -150,6 +150,9 @@ class MarkerServer(BaseSoTHasTraits):
         self._ims.sc.unregister()  # the subscriber needs to be unregistered explicitly here.
 
     def add_marker(self, marker: IAMarker):
+        #Check if the marker name is already in use. Change if so.
+        marker.name = self.check_duplicate_name(marker.name)
+
         self.marker[marker.name] = marker
 
         for m in marker.markers:
@@ -177,7 +180,30 @@ class MarkerServer(BaseSoTHasTraits):
 
     @observe("marker.items:name")
     def _marker_name_changed(self, evt: TraitChangeEvent):
+        #Whenever a new name is inputted, it first needs to be checked if the new name already exists,
+        #since a duplicate name causes the first marker with that name to be overwritten and disappear.
+        if evt.new in self._ims.marker_contexts and evt.new != evt.old:
+            unique_name = self.check_duplicate_name(evt.new)
+            evt.new = unique_name
+            #Change the actual marker object's name directly
+            evt.object.trait_set(name=unique_name, trait_change_notify=False)
+            evt.object.marker.name = unique_name    #This feels odd, but works
+
         self.marker[evt.new] = (marker := self.marker.pop(evt.old))
         self._ims.erase(evt.old)
         self._ims.insert(marker.marker, self._server_cb)
         self._ims.applyChanges()
+        #Also rename the Marker in _control
+        self._control[evt.new] = self._control.pop(evt.old)
+
+    #Check if the given marker name is already in use.
+    #if so, add numeric suffixes until a unique name is found
+    def check_duplicate_name(self, marker_name: str) -> str:
+        original_name = marker_name
+        candidate_name = original_name
+        suffix = 2
+        while candidate_name in self._ims.marker_contexts:
+            #name_2, name_3, name_4, etc.
+            candidate_name = f"{original_name}_{suffix}"
+            suffix += 1
+        return candidate_name
