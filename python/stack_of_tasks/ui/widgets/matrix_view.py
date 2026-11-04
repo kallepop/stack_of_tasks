@@ -54,13 +54,18 @@ class MatrixItem(QStandardItem):
         return super().data(role)
 
     def setData(self, value: Any, role: int = ...) -> bool:
+        #This gets called when changing a value in the matrix, so update the value as before
+        #and then manually emit a signal so abstract_marker.py can update the marker pose
         if role == Qt.EditRole:
             self.model().matrix()[self._i, self._j] = value
+            self.model().matrix_val_changed.emit()
         else:
             return super().setData(value, role)
 
 
 class NumpyTableModel(QStandardItemModel):
+    matrix_val_changed = pyqtSignal()
+
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
 
@@ -176,7 +181,11 @@ class MatrixWidget(QTableView):
 
         self.shape = None
         self.matrix_model = NumpyTableModel()
+        self.matrix_model.matrix_val_changed.connect(self._matrix_value_changed)
         self.setModel(self.matrix_model)
+
+    def _matrix_value_changed(self) -> None:
+        self.matrix_changed.emit(self.get_matrix())
 
     def model(self) -> NumpyTableModel:
         return super().model()
