@@ -92,9 +92,6 @@ class Logic_Project(BaseSoTHasTraits):
 
         self.marker_server = MarkerServer()
         IAMarker._default_frame_id = self.controller.robot_model.root_link
-        #Conveniently, this marker does not show up under the "Marker" tab.
-        self.marker_server.add_marker(marker := FullMovementMarker(name="__offset_control__", frame_id=IAMarker._default_frame_id))
-        marker.set_visibility(False)
 
         ##
         objects = config.objects

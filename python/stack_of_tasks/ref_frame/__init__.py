@@ -9,6 +9,9 @@ import tf.transformations as tfs
 
 from stack_of_tasks.utils import ClassRegister
 from stack_of_tasks.utils.traits import ABCSoTHasTraits, matrix_edit
+from traits.observation.events import TraitChangeEvent
+
+from numpy.linalg import inv
 
 Transform = np.ndarray
 Jacobian = np.ndarray
@@ -67,6 +70,8 @@ class Offset(RefFrame):
     )
     frame: RefFrame = ta.Instance(RefFrame)
     T: Transform = ta.Property(ta.Array, visible=False)
+    #Store the marker which controls this offset
+    marker = None
 
     def __init__(self, frame: HasTransform, offset=None, **kwargs) -> None:
         if offset is None:
@@ -81,12 +86,21 @@ class Offset(RefFrame):
 
     @ta.property_depends_on("frame.T, offset")
     def _get_T(self):
-        return self.frame.T @ self.offset
+        #Update the stored marker's transform matrix, when updating the offset matrix
+        t = self.frame.T @ self.offset
+        if self.marker is not None:
+            self.marker.transform = t
+        return t
 
     def transform(self, T_matrix: Transform) -> Offset:
         with matrix_edit(self, "offset"):
             self.offset[:] = self.offset @ T_matrix
         return self
+
+    #Observe the stored marker changing its transform matrix, which happens when the marker is moved
+    @ta.observe("marker.transform", post_init=True)
+    def marker_feedback(self, evt: TraitChangeEvent):
+        self.trait_set(offset=inv(self.frame.T) @ evt.new)
 
 
 from .frames import Origin, RobotRefFrame

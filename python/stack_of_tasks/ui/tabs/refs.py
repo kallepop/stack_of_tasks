@@ -12,6 +12,9 @@ from stack_of_tasks.ref_frame import Offset
 
 from .base import Base
 
+from stack_of_tasks.marker import IAMarker
+from stack_of_tasks.marker.trait_marker import FullMovementMarker
+
 
 class RefFramesTabWidget(Base):
     new_ref_signal = pyqtSignal([type, dict])
@@ -43,28 +46,38 @@ class RefFramesTabWidget(Base):
         ).exec() == NewInstanceDialog.Accepted:
             cls = t.cls_selection.current_object
             args = t.traits.get_arguments()
+            #Create a new marker for each Offset, which it then stores
+            if cls == Offset:
+                self.marker_server.add_marker(marker := FullMovementMarker(name=args["name"]+"_offset_control__", frame_id=IAMarker._default_frame_id))
+                args["marker"] = marker
+                marker.set_visibility(False)
             self.new_ref_signal.emit(cls, args)
 
     def ref_selected(self):
         if len(sel := self.ref_view.selectedIndexes()) > 0:
             obj = sel[0].data(RawDataRole)
             self.edit_ref.set_trait_object(obj)
+
             if isinstance(obj, Offset):
-                #If an Offset is selected, show the __offset_control__ marker and hide all others.
+                #If an Offset is selected hide all markers...
                 for marker in self.marker_server.marker.values():
-                    if marker.name == "__offset_control__":
-                        marker.set_visibility(True)
-                        marker.transform = obj.T    #Use actual position relative to world frame for now
-                    else:
-                        marker.set_visibility(False)
+                    marker.set_visibility(False)
                     marker.sync = marker.name
+                #except the one that controls the selected Offset
+                obj.marker.set_visibility(True)
+                obj.marker.transform = obj.T
+                obj.marker.sync = marker.name
             else:
-                #Else do the reverse.
+                #Else show all normal markers, then hide the offset markers...
                 for marker in self.marker_server.marker.values():
-                    if marker.name == "__offset_control__":
-                        marker.set_visibility(False)
-                    else:
-                        marker.set_visibility(True)
+                    marker.set_visibility(True)
                     marker.sync = marker.name
+                #by looping over all references in this view...
+                model = self.ref_view.model()
+                for row in range(model.rowCount()):
+                    objAtRow = model.data(model.index(row, 0), RawDataRole)
+                    #and if the reference is an Offset, hiding its marker
+                    if isinstance(objAtRow, Offset):
+                        objAtRow.marker.set_visibility(False)
         else:
             obj = None
