@@ -72,7 +72,8 @@ class Offset(RefFrame):
         if offset is None:
             offset = np.identity(4)
 
-        super(Offset, self).__init__(frame=frame, offset=offset, **kwargs)
+        # Create a copy of offset to make it independent from the class variable
+        super(Offset, self).__init__(frame=frame, offset=offset.copy(), **kwargs)
 
         # hasattr does not work see: https://github.com/enthought/traits/issues/1753
         if "J" in self.frame.trait_names():
