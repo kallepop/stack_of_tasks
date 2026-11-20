@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Type
 
 import traits.api as ta
-from PyQt5.QtCore import pyqtProperty
+from PyQt5.QtCore import pyqtProperty, pyqtSignal
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
     QFormLayout,
@@ -27,6 +27,9 @@ from numpy import ndarray
 
 
 class NewInstanceWidget(QWidget):
+    input_change = pyqtSignal(bool)
+    testing = pyqtSignal(str)
+    
     def __init__(self, parent=None, cls=None) -> None:
         super().__init__(parent)
 
@@ -62,6 +65,15 @@ class NewInstanceWidget(QWidget):
             if me is not None:
                 widget = me.widget()
 
+                if name == "name":
+                    validator = ui_mapping.QTraitValidator(cls_trs[name].validate)
+                    validator.setParent(widget)     #Is this necessary?
+                    widget.setValidator(validator)
+
+                    validator.input_rejected.connect(self._input_changed)
+                    #validator.testing.connect(self._label_change)
+                    #print(widget.hasAcceptableInput())
+
                 me.setup_function(trait, widget)
                 value = old_args.get(name, get_default(self.cls, trait, name))
                 set_user_property(widget, value)
@@ -78,6 +90,12 @@ class NewInstanceWidget(QWidget):
                 r[k] = get_user_property(v)
 
         return r
+
+    def _label_change(self, text):
+        self.testing.emit(text)
+
+    def _input_changed(self, accepted):
+        self.input_change.emit(accepted)
 
 
 class HasTraitsFormLayout(QFormLayout):
