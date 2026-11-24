@@ -152,6 +152,7 @@ class MarkerServer(BaseSoTHasTraits):
     def add_marker(self, marker: IAMarker):
         #Check if the marker name is already in use. Change if so.
         marker.name = self.check_duplicate_name(marker.name)
+        marker._adapt_marker_names()
 
         self.marker[marker.name] = marker
 
@@ -160,19 +161,19 @@ class MarkerServer(BaseSoTHasTraits):
             self._ims.insert(m, self._server_cb)
         self._ims.applyChanges()
 
-    def remove(self, marker: IAMarker):
-        for control in marker.markers:
-            self._ims.erase(control.name)
-            self._control.pop(control.name)
-
+    def remove(self, marker: str):
+        marker = self.marker.pop(marker)
+        for m in marker.markers:
+            self._ims.erase(m.name)
+            self._control.pop(m.name)
         self._ims.applyChanges()
-        self.marker.pop(marker.name)
+        return marker
 
     @observe("marker.items:sync")
     def _sync(self, evt: TraitChangeEvent):
-        for marker in self.marker[evt.new].markers:
-            self._ims.setPose(marker.name, marker.pose)
-            self._ims.insert(marker, self._server_cb)
+        for m in self.marker[evt.new].markers:
+            self._ims.setPose(m.name, m.pose)
+            self._ims.insert(m, self._server_cb)
         self._ims.applyChanges()
 
     def _server_cb(self, fb: InteractiveMarkerFeedback):
@@ -180,6 +181,8 @@ class MarkerServer(BaseSoTHasTraits):
 
     @observe("marker.items:name")
     def _marker_name_changed(self, evt: TraitChangeEvent):
+        marker = self.remove(evt.old)
+        
         #Whenever a new name is inputted, it first needs to be checked if the new name already exists,
         #since a duplicate name causes the first marker with that name to be overwritten and disappear.
         if evt.new in self._ims.marker_contexts and evt.new != evt.old:
@@ -187,14 +190,17 @@ class MarkerServer(BaseSoTHasTraits):
             evt.new = unique_name
             #Change the actual marker object's name directly
             evt.object.trait_set(name=unique_name, trait_change_notify=False)
-            evt.object.marker.name = unique_name    #This feels odd, but works
+            evt.object.main.name = unique_name    #This feels odd, but works
 
-        self.marker[evt.new] = (marker := self.marker.pop(evt.old))
-        self._ims.erase(evt.old)
-        self._ims.insert(marker.marker, self._server_cb)
-        self._ims.applyChanges()
+        #self.marker[evt.new] = (marker := self.marker.pop(evt.old))
+        #self._ims.erase(evt.old)
+        #self._ims.insert(marker.marker, self._server_cb)
+        #self._ims.applyChanges()
         #Also rename the Marker in _control
-        self._control[evt.new] = self._control.pop(evt.old)
+        #self._control[evt.new] = self._control.pop(evt.old)
+        
+        marker._adapt_marker_names()
+        self.add_marker(marker)
 
     #Check if the given marker name is already in use.
     #if so, add numeric suffixes until a unique name is found

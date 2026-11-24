@@ -25,12 +25,18 @@ MarkerRegister = ClassRegister("MarkerRegister")
 
 @MarkerRegister.base
 class IAMarker(ABCSoTHasTraits):
+    """Interactive Marker base class
+    In contrast to ROS' InteractiveMarker, this class can combine multiple markers, e.g. for an interactive cone marker
+    """
+
     name = ta.Str()
 
     _default_frame_id = ""
     frame_id = ta.Str()
 
-    transform = ta.Array(shape=(4, 4), value=np.identity(4), comparison_mode=ta.ComparisonMode.none)
+    transform = ta.Array(
+        shape=(4, 4), dtype="float", value=np.identity(4), comparison_mode=ta.ComparisonMode.none
+    )
 
     scale = ta.Range(low=0.0, value=0.25, exclude_low=True)
     saved_scale = 0.25  #Used to reset the scale when unhiding a marker.
@@ -42,46 +48,52 @@ class IAMarker(ABCSoTHasTraits):
         self.lg = Guard()
         self.markers = []
 
-        self.marker = self._create_interactive_marker(
+        # main marker == shortcut for self.markers[0]
+        self.main = self._create_interactive_marker(
             name=self.name,
             scale=self.scale,
             frame_id=self.frame_id,
             pose=matrix_to_pose(self.transform),
         )
-
-        self.markers.append(self.marker)
+        # add main marker to the list of markers
+        self.markers.append(self.main)
 
     # trait method for dynamic default
     @classmethod
     def _frame_id_default(cls):
         return cls._default_frame_id
 
-    @ta.observe("name", post_init=True)
-    def _name_changed(self, evt: TraitChangeEvent):
-        self.marker.name = evt.new
+    def _adapt_marker_names(self):
+        # update names of all (sub) markers to match self.name
+        for m in self.markers:
+            # name of sub marker is name.subname
+            dot = m.name.find(".")
+            if dot == -1:
+                dot = len(m.name)
+            m.name = f"{self.name}{m.name[dot:]}"
 
     @ta.observe("frame_id", post_init=True)
     def _frame_id_changed(self, evt: TraitChangeEvent):
         if "frame_id" not in self.lg:
-            self.marker.header.frame_id = evt.new
+            self.main.header.frame_id = evt.new
             self.sync = self.name
 
     @ta.observe("transform", post_init=True)
     def _transform_changed(self, evt: TraitChangeEvent):
         if "transform" not in self.lg:
-            self.marker.pose = matrix_to_pose(self.transform)
+            self.main.pose = matrix_to_pose(self.transform)
             self.sync = self.name
 
     @ta.observe("scale", post_init=True)
     def _scale_changed(self, evt: TraitChangeEvent):
         if "scale" not in self.lg:
-            self.marker.scale = self.scale
+            self.main.scale = self.scale
             self.sync = self.name
 
     def feedback(self, fb: InteractiveMarkerFeedback):
         with self.lg("transform"):
             self.trait_set(transform=pose_to_matrix(fb.pose))
-            self.marker.pose = fb.pose
+            self.main.pose = fb.pose
             self.sync = self.name
 
     @staticmethod
@@ -122,7 +134,6 @@ class IAMarker(ABCSoTHasTraits):
         mode: int,
         directions="xyz",
         or_mode=None,
-        *markers,
     ):
         for d in directions:
             control = InteractiveMarkerControl(
@@ -133,13 +144,10 @@ class IAMarker(ABCSoTHasTraits):
             if or_mode:
                 control.orientation_mode = or_mode
 
-            # todo unnormalized quaternion
             control.orientation.x = 0.7071068 if d == "x" else 0
             control.orientation.z = 0.7071068 if d == "y" else 0
             control.orientation.y = 0.7071068 if d == "z" else 0
             control.orientation.w = 0.7071068
-
-            control.markers.extend(markers)
 
             im.controls.append(control)
 
@@ -244,5 +252,12 @@ class IAMarker(ABCSoTHasTraits):
         if self.scale > 0.001:
             self.saved_scale = self.scale
         #Hide marker by setting scale to a very small value (0 does not work) and changing the alpha of the InteractiveMarker object.
-        self.marker.controls[0].markers[0].color.a = 0.5 if visible else 0.0
+        self.main.controls[0].markers[0].color.a = 0.5 if visible else 0.0
         self.trait_set(scale=self.saved_scale if visible else 0.00001)
+    
+    @staticmethod
+    def text(text, scale=0.1, color=ColorRGBA(1, 1, 1, 1), **kwargs):
+        """Create a text marker"""
+        m = Marker(type=Marker.TEXT_VIEW_FACING, text=text, color=color, **kwargs)
+        m.scale.z = scale
+        return m
